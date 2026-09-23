@@ -1,4 +1,4 @@
-# TaskBoard – MERN Trello-lite
+# Taskflow – MERN Trello-lite
 
 A task/project management board built with MongoDB, Express, React and Node. Boards, lists and cards with drag-and-drop, board membership, and owner/member permissions.
 
