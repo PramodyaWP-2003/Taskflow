@@ -1,16 +1,60 @@
-# React + Vite
+# Taskflow – MERN Trello-lite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A task/project management board built with MongoDB, Express, React and Node. Boards, lists and cards with drag-and-drop, board membership, and owner/member permissions.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Authentication** – Register, login, JWT-based sessions, forgot/reset password (reset link is logged to the server console in development, no email service connected yet).
+- **Boards** – Create, view, delete. Each board tracks an owner.
+- **Lists** – Create, rename, reorder, delete (cascades to its cards).
+- **Cards** – Create, edit, delete, drag-and-drop between lists.
+- **Members & permissions** – Board owners can invite existing users by email and remove members. Only the owner can edit/delete the board or manage members; any member can manage lists and cards.
 
-## React Compiler
+## Tech stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Frontend:** React (Vite), React Router, Tailwind CSS, @dnd-kit (drag-and-drop), Axios, lucide-react
+**Backend:** Express, Mongoose, MongoDB Atlas, JSON Web Tokens, bcrypt
 
-## Expanding the ESLint configuration
+## Data models
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| Model | Fields | Notes |
+|---|---|---|
+| `User` | name, email, password (hashed) | Password never returned by default queries |
+| `Board` | title, description, owner (ref User) | |
+| `BoardMember` | user (ref), board (ref), role (`OWNER` / `MEMBER`) | One row per user per board; unique index on (user, board) |
+| `List` | title, position, board (ref) | Ordered within a board |
+| `Card` | title, description, position, list (ref), assignedTo (ref User, optional) | Ordered within a list |
+
+## API overview
+
+All routes below `/api/boards`, `/api/lists`, `/api/cards` require a `Authorization: Bearer <token>` header.
+
+**Auth**
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password/:token`
+
+**Boards**
+- `GET /api/boards` – boards the user is a member of
+- `POST /api/boards`
+- `GET /api/boards/:boardId` – board with its lists, cards, and members
+- `PATCH /api/boards/:boardId` – owner only
+- `DELETE /api/boards/:boardId` – owner only
+- `POST /api/boards/:boardId/members` – owner only, invite by email
+- `DELETE /api/boards/:boardId/members/:userId` – owner only
+- `POST /api/boards/:boardId/lists`
+
+**Lists**
+- `PATCH /api/lists/:listId`
+- `DELETE /api/lists/:listId`
+- `POST /api/lists/:listId/cards`
+
+**Cards**
+- `PATCH /api/cards/:cardId` – edit, move to another list, or reassign
+- `DELETE /api/cards/:cardId`
+
+## Setup
+
+### Server

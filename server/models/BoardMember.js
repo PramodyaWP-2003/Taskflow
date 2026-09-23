@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const boardMemberSchema = new mongoose.Schema(
   {
@@ -25,4 +25,7 @@ const boardMemberSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("BoardMember", boardMemberSchema);
+// one user can only have one membership row per board
+boardMemberSchema.index({ user: 1, board: 1 }, { unique: true });
+
+export default mongoose.model("BoardMember", boardMemberSchema);

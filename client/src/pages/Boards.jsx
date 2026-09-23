@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { LayoutDashboard, Layers, Users, Zap, Plus, Trash2, Sparkles } from "lucide-react";
-import { mockBoards } from "../data/mock";
+import { LayoutDashboard, Layers, Users, Zap, Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import api from "../api";
 
 const gradients = [
   "from-indigo-500 to-violet-500",
@@ -18,24 +18,48 @@ const features = [
 ];
 
 export default function Boards() {
-  const [boards, setBoards] = useState(mockBoards);
+  const [boards, setBoards] = useState([]);
   const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [creating, setCreating] = useState(false);
 
-  const addBoard = (e) => {
+  useEffect(() => {
+    api
+      .get("/boards")
+      .then(({ data }) => setBoards(data.map((b) => ({ ...b, id: b._id }))))
+      .catch(() => setError("Could not load boards."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const addBoard = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    setBoards([...boards, { id: crypto.randomUUID(), title: title.trim() }]);
-    setTitle("");
+    setCreating(true);
+    setError("");
+    try {
+      const { data } = await api.post("/boards", { title: title.trim() });
+      setBoards((prev) => [...prev, { ...data, id: data._id }]);
+      setTitle("");
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not create the board.");
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const deleteBoard = (board) => {
+  const deleteBoard = async (board) => {
     if (!window.confirm(`Delete board "${board.title}"? This can't be undone.`)) return;
-    setBoards((prev) => prev.filter((b) => b.id !== board.id));
+    try {
+      await api.delete(`/boards/${board.id}`);
+      setBoards((prev) => prev.filter((b) => b.id !== board.id));
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not delete the board.");
+    }
   };
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
-      {/* Hero */}
       <section className="flex flex-col items-center text-center">
         <div className="float-icon relative">
           <div className="absolute inset-0 rounded-3xl bg-sky-400/40 blur-2xl" />
@@ -63,7 +87,6 @@ export default function Boards() {
         </div>
       </section>
 
-      {/* Boards (centered) */}
       <section className="mt-12">
         <div className="mb-5 flex items-center justify-center gap-2 text-white">
           <Sparkles size={18} className="text-sky-300" />
@@ -71,44 +94,60 @@ export default function Boards() {
           <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">{boards.length}</span>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4">
-          {boards.map((b, i) => (
-            <div key={b.id} className="group relative w-full max-w-sm sm:w-64">
-              <Link
-                to={`/boards/${b.id}`}
-                className={`flex h-32 flex-col justify-between rounded-2xl bg-gradient-to-br ${gradients[i % gradients.length]} p-4 pr-12 text-white shadow-lg ring-1 ring-white/20 transition hover:-translate-y-1 hover:shadow-2xl`}
-              >
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/25">
-                  <LayoutDashboard size={16} />
-                </span>
-                <span className="truncate text-lg font-semibold">{b.title}</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => deleteBoard(b)}
-                aria-label={`Delete board ${b.title}`}
-                className="absolute right-2 top-2 rounded-lg bg-black/25 p-1.5 text-white transition hover:bg-red-600 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
+        {error && (
+          <p className="mx-auto mb-4 max-w-md rounded-lg bg-red-500/15 px-3 py-2 text-center text-sm text-red-200">
+            {error}
+          </p>
+        )}
 
-          <form
-            onSubmit={addBoard}
-            className="flex h-32 w-full max-w-sm flex-col justify-center gap-2 rounded-2xl border-2 border-dashed border-white/25 bg-white/5 p-3 backdrop-blur sm:w-64"
-          >
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="New board title"
-              className="w-full rounded-lg bg-white/90 px-3 py-2 text-sm text-slate-800 outline-none focus:ring-4 focus:ring-sky-300/40"
-            />
-            <button className="flex items-center justify-center gap-1 rounded-lg bg-sky-500 py-1.5 text-sm font-medium text-white transition hover:bg-sky-400">
-              <Plus size={16} /> Create board
-            </button>
-          </form>
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-10 text-sky-200">
+            <Loader2 className="animate-spin" />
+          </div>
+        ) : (
+          <div className="flex flex-wrap justify-center gap-4">
+            {boards.map((b, i) => (
+              <div key={b.id} className="group relative w-full max-w-sm sm:w-64">
+                <Link
+                  to={`/boards/${b.id}`}
+                  className={`flex h-32 flex-col justify-between rounded-2xl bg-gradient-to-br ${gradients[i % gradients.length]} p-4 pr-12 text-white shadow-lg ring-1 ring-white/20 transition hover:-translate-y-1 hover:shadow-2xl`}
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/25">
+                    <LayoutDashboard size={16} />
+                  </span>
+                  <span className="truncate text-lg font-semibold">{b.title}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => deleteBoard(b)}
+                  aria-label={`Delete board ${b.title}`}
+                  className="absolute right-2 top-2 rounded-lg bg-black/25 p-1.5 text-white transition hover:bg-red-600 focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+
+            <form
+              onSubmit={addBoard}
+              className="flex h-32 w-full max-w-sm flex-col justify-center gap-2 rounded-2xl border-2 border-dashed border-white/25 bg-white/5 p-3 backdrop-blur sm:w-64"
+            >
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="New board title"
+                className="w-full rounded-lg bg-white/90 px-3 py-2 text-sm text-slate-800 outline-none focus:ring-4 focus:ring-sky-300/40"
+              />
+              <button
+                disabled={creating}
+                className="flex items-center justify-center gap-1 rounded-lg bg-sky-500 py-1.5 text-sm font-medium text-white transition hover:bg-sky-400 disabled:opacity-70"
+              >
+                {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                Create board
+              </button>
+            </form>
+          </div>
+        )}
       </section>
     </main>
   );
