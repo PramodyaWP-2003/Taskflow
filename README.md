@@ -72,3 +72,10 @@ Pushing to `main` triggers an automated pipeline:
 **Live backend:** https://taskflow-server-latest-bqg2.onrender.com (free tier — spins down after 15 minutes of inactivity; first request after idle may take 30–50 seconds)
 
 **Tools:** Docker, GitHub Actions, Docker Hub, Render
+
+## Live Demo
+
+🔗 **App:** https://taskflow-neon-mu.vercel.app
+🔗 **API:** https://taskflow-server-latest-bqg2.onrender.com
+
+Note: the backend runs on Render's free tier and sleeps after 15 minutes of inactivity — the first load may take 30–50 seconds while it wakes up.
