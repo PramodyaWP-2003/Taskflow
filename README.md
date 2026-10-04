@@ -58,3 +58,5 @@ All routes below `/api/boards`, `/api/lists`, `/api/cards` require a `Authorizat
 ## Setup
 
 ### Server
+
+- The backend is deployed on Render's free tier, which spins down after 15 minutes of inactivity. The first request after idle time can take 30-50 seconds to respond while the instance wakes up.
