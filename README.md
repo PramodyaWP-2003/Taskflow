@@ -60,3 +60,15 @@ All routes below `/api/boards`, `/api/lists`, `/api/cards` require a `Authorizat
 ### Server
 
 - The backend is deployed on Render's free tier, which spins down after 15 minutes of inactivity. The first request after idle time can take 30-50 seconds to respond while the instance wakes up.
+
+## CI/CD Pipeline
+
+Pushing to `main` triggers an automated pipeline:
+
+1. GitHub Actions builds a Docker image from `server/Dockerfile`
+2. The image is pushed to Docker Hub
+3. A deploy hook triggers Render to pull the new image and redeploy
+
+**Live backend:** https://taskflow-server-latest-bqg2.onrender.com (free tier — spins down after 15 minutes of inactivity; first request after idle may take 30–50 seconds)
+
+**Tools:** Docker, GitHub Actions, Docker Hub, Render
