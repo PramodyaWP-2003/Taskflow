@@ -23,3 +23,6 @@ jobs:
           context: ./server
           push: true
           tags: pramodya01888/taskflow-server:latest
+
+      - name: Trigger Render deploy
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
